@@ -321,9 +321,9 @@ implements TransactionManager {
             try {
                 rollbackAction(session);
 
-                if (session.isolationLevel == SessionInterface
-                        .TX_REPEATABLE_READ || session
-                        .isolationLevel == SessionInterface.TX_SERIALIZABLE) {
+                if (session.isolationLevel == SessionInterface.TX_REPEATABLE_READ 
+                		|| session.isolationLevel == SessionInterface.TX_SERIALIZABLE
+                		|| session.isolationLevel == SessionInterface.TX_SNAPSHOT) {
                     session.tempSet.clear();
 
                     session.redoAction       = false;
@@ -433,6 +433,7 @@ implements TransactionManager {
 
                 case SessionInterface.TX_REPEATABLE_READ :
                 case SessionInterface.TX_SERIALIZABLE :
+                case SessionInterface.TX_SNAPSHOT :
                     redoAction = false;
                     break;
 

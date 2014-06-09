@@ -778,6 +778,7 @@ public class RowAction extends RowActionBase {
 
                 case SessionInterface.TX_REPEATABLE_READ :
                 case SessionInterface.TX_SERIALIZABLE :
+                case SessionInterface.TX_SNAPSHOT : //yl: add snapshot, Jun 2014
                 default :
                     threshold = session.transactionTimestamp;
                     break;
@@ -800,28 +801,48 @@ public class RowAction extends RowActionBase {
 
                 continue;
             }
-
+            
+            // yl: 判断进行操作的session是否是当前的session
             if (session == action.session) {
+            	/*
                 if (action.type == ACTION_DELETE) {
                     actionType = action.type;
                 } else if (action.type == ACTION_INSERT) {
                     actionType = action.type;
-                }
+                }*/
+            	if (action.type == ACTION_INSERT || action.type == ACTION_DELETE){
+            		actionType = action.type;
+            	}
 
                 action = action.next;
 
                 continue;
             } else if (action.commitTimestamp == 0) {
+            	// yl: 如果不是当前session且该action的数据没有commit
                 if (action.type == ACTION_NONE) {
                     throw Error.runtimeError(ErrorCode.U_S0500, "RowAction");
                 } else if (action.type == ACTION_INSERT) {
                     if (mode == TransactionManager.ACTION_READ) {
-                        actionType = action.ACTION_DELETE;
+                    	// 读数据
+                    	// yl: add snapshot, Jun 2014
+                    	switch (session.isolationLevel) {
+
+	                        case SessionInterface.TX_SNAPSHOT:
+	                        default : 
+	                        	//yl: 不让该action读取到现在session中的数据
+	                        	actionType = ACTION_DELETE;
+	                            break;
+                    	}
+                    	// default:
+                        actionType = ACTION_DELETE;
                     } else if (mode == TransactionManager.ACTION_DUP) {
+                    	// 插入数据
                         actionType = ACTION_INSERT;
 
-                        session.tempSet.clear();
-                        session.tempSet.add(action);
+                    	if(session.isolationLevel != SessionInterface.TX_SNAPSHOT){
+                    		session.tempSet.clear();
+                            session.tempSet.add(action);
+                    	}  
                     } else if (mode == TransactionManager.ACTION_REF) {
                         actionType = ACTION_DELETE;
                     }
@@ -833,6 +854,16 @@ public class RowAction extends RowActionBase {
                         //
                     } else if (mode == TransactionManager.ACTION_REF) {
                         actionType = ACTION_DELETE;
+                    } else if (mode == TransactionManager.ACTION_READ) {
+                    	// yl: add snapshot, Jun 2014
+                    	switch (session.isolationLevel) {
+
+                        case SessionInterface.TX_SNAPSHOT:
+                        default :
+                        	//yl: 取反，保证该事务看到的一致
+                        	actionType = ACTION_INSERT;
+                            break;
+                    	}
                     }
                 }
 
@@ -840,24 +871,48 @@ public class RowAction extends RowActionBase {
 
                 continue;
             } else if (action.commitTimestamp < threshold) {
+            	// action的事务已经提交，而且比事务时间戳来得小，保存
                 if (action.type == ACTION_DELETE) {
                     actionType = ACTION_DELETE;
                 } else if (action.type == ACTION_INSERT) {
                     actionType = ACTION_INSERT;
                 }
             } else {
+            	// action的事务已经提交，但是比事务时间戳来得大，回滚
                 if (action.type == ACTION_INSERT) {
                     if (mode == TransactionManager.ACTION_READ) {
-                        actionType = action.ACTION_DELETE;
+                        actionType = ACTION_DELETE;
                     } else if (mode == TransactionManager.ACTION_DUP) {
-                        actionType = ACTION_INSERT;
-
-                        session.tempSet.clear();
-                        session.tempSet.add(action);
+                        
+                    	actionType = ACTION_INSERT;
+                    	if(session.isolationLevel != SessionInterface.TX_SNAPSHOT){
+                    		session.tempSet.clear();
+                            session.tempSet.add(action);
+                    	}  
+                    
                     } else if (mode == TransactionManager.ACTION_REF) {
                         actionType = ACTION_DELETE;
                     }
+                    
+                    // yl: add snapshot, Jun 2014
+                    if(session.isolationLevel == SessionInterface.TX_SNAPSHOT){
+            			// 只要是SNAPSHOT, 其它事务的操作一律无视
+                    	actionType = ACTION_DELETE;
+            			break;
+            		}
                 }
+                // yl: add snapshot, Jun 2014
+                else if(action.type == ACTION_DELETE)
+                {
+                	switch (session.isolationLevel) {
+                    	
+                    case SessionInterface.TX_SNAPSHOT :
+                    default :
+                    	actionType = ACTION_INSERT;
+                        break;
+                	}
+                }
+                ///
             }
 
             action = action.next;

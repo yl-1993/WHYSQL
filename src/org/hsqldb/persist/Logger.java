@@ -1508,6 +1508,11 @@ public class Logger {
                 case SessionInterface.TX_SERIALIZABLE :
                     value = Tokens.T_SERIALIZABLE.toLowerCase();
                     break;
+                
+                // yl: add snapshot, Jun 2014
+                case SessionInterface.TX_SNAPSHOT:
+                	value = Tokens.T_SERIALIZABLE.toLowerCase();
+                	break;
             }
 
             return value;
@@ -2004,6 +2009,11 @@ public class Logger {
             case SessionInterface.TX_SERIALIZABLE :
                 sb.append(Tokens.T_SERIALIZABLE);
                 break;
+                
+            // yl: add snapshot, Jun 2014
+			case SessionInterface.TX_SNAPSHOT :
+				sb.append(Tokens.T_SNAPSHOT);
+				break;
         }
 
         list.add(sb.toString());

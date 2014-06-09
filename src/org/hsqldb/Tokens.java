@@ -576,6 +576,8 @@ public class Tokens {
     public static final String T_SEQUENCE             = "SEQUENCE";
     static final String        T_SERIAL               = "SERIAL";
     public static final String T_SERIALIZABLE         = "SERIALIZABLE";
+    ////yl:  add snapshot, Jun 2014
+    public static final String T_SNAPSHOT			  = "SNAPSHOT";
     public static final String T_SERVER               = "SERVER";
     static final String        T_SERVER_NAME          = "SERVER_NAME";
     public static final String T_SESSION              = "SESSION";
@@ -1460,6 +1462,8 @@ public class Tokens {
     public static final int WRITE                       = 547;
     public static final int WRAPPER                     = 548;
     public static final int ZONE                        = 549;
+    ////yl:  add snapshot, Jun 2014
+    public static final int SNAPSHOT					= 550;
 
     // other token values used as switch cases
     static final int ALIAS          = 558;
@@ -2354,6 +2358,8 @@ public class Tokens {
         commandSet.put(T_WRITE, WRITE);
         commandSet.put(T_WRITE_DELAY, WRITE_DELAY);
         commandSet.put(T_ZONE, ZONE);
+        ////yl:  add snapshot, Jun 2014
+        commandSet.put(T_SNAPSHOT, SNAPSHOT);
 
         //
         commandSet.put(T_ACOS, ACOS);

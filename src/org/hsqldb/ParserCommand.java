@@ -473,6 +473,13 @@ public class ParserCommand extends ParserDDL {
                         level = SessionInterface.TX_SERIALIZABLE;
                         break;
 
+                    //yl: add snapshot, Jun 2014
+                    case Tokens.SNAPSHOT :
+                    	read();
+                    	
+                    	level = SessionInterface.TX_SNAPSHOT;
+                    	break;
+                    	
                     default :
                         throw unexpectedToken();
                 }
@@ -1640,6 +1647,13 @@ public class ParserCommand extends ParserDDL {
                             level = SessionInterface.TX_REPEATABLE_READ;
                             break;
 
+                        //yl: add snapshot, Jun 2014
+                        case Tokens.SNAPSHOT :
+                        	read();
+                        	
+                        	level = SessionInterface.TX_SNAPSHOT;
+                        	break;
+                            
                         default :
                             throw unexpectedToken();
                     }
@@ -1663,7 +1677,7 @@ public class ParserCommand extends ParserDDL {
             }
         }
 
-        if (!readonly && level == 1) {
+        if (!readonly && level == SessionInterface.TX_READ_UNCOMMITTED) {
             throw unexpectedToken(Tokens.T_WRITE);
         }
 

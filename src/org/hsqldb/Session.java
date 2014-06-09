@@ -498,7 +498,9 @@ public class Session implements SessionInterface {
 
         if (lockStatement == statement) {
             if (isolationLevel == SessionInterface.TX_REPEATABLE_READ
-                    || isolationLevel == SessionInterface.TX_SERIALIZABLE) {
+                    || isolationLevel == SessionInterface.TX_SERIALIZABLE
+                    || isolationLevel == SessionInterface.TX_SNAPSHOT) {
+            	// yl: add snapshot, Jun 2014
                 return true;
             }
 
@@ -2228,6 +2230,7 @@ public class Session implements SessionInterface {
 
             case SessionInterface.TX_REPEATABLE_READ :
             case SessionInterface.TX_SERIALIZABLE :
+            //case SessionInterface.TX_SNAPSHOT :
             default :
                 return Tokens.T_SERIALIZABLE;
         }

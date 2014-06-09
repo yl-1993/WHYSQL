@@ -374,8 +374,8 @@ class TransactionManagerCommon {
     void endActionTPL(Session session) {
 
         if (session.isolationLevel == SessionInterface.TX_REPEATABLE_READ
-                || session.isolationLevel
-                   == SessionInterface.TX_SERIALIZABLE) {
+         || session.isolationLevel == SessionInterface.TX_SERIALIZABLE
+         || session.isolationLevel == SessionInterface.TX_SNAPSHOT) {
             return;
         }
 
