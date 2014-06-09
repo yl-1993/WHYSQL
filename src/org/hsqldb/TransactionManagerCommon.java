@@ -120,7 +120,6 @@ class TransactionManagerCommon {
 
                     manager.liveTransactionTimestamps.addLast(
                         session.transactionTimestamp);
-
                     break;
                 }
                 case TransactionManager.LOCKS : {
@@ -197,7 +196,8 @@ class TransactionManagerCommon {
 
         for (int i = 0; i < limit; i++) {
             RowAction action = (RowAction) session.rowActionList.get(i);
-
+     
+            
             if (action.type == RowActionBase.ACTION_NONE) {
                 continue;
             }
@@ -598,7 +598,10 @@ class TransactionManagerCommon {
             Session holder = (Session) tableWriteLocks.get(name);
 
             if (holder != null && holder != session) {
-                session.tempSet.add(holder);
+            	if((holder.isolationLevel == SessionInterface.TX_SERIALIZABLE) 
+            			|| (session.isolationLevel == SessionInterface.TX_SERIALIZABLE)){
+            		session.tempSet.add(holder);
+            	}
             }
 
             Iterator it = tableReadLocks.get(name);
@@ -607,7 +610,10 @@ class TransactionManagerCommon {
                 holder = (Session) it.next();
 
                 if (holder != session) {
-                    session.tempSet.add(holder);
+                	if((holder.isolationLevel == SessionInterface.TX_SERIALIZABLE) 
+                			|| (session.isolationLevel == SessionInterface.TX_SERIALIZABLE)){
+                		session.tempSet.add(holder);
+                	}
                 }
             }
         }
@@ -628,7 +634,10 @@ class TransactionManagerCommon {
             Session holder = (Session) tableWriteLocks.get(name);
 
             if (holder != null && holder != session) {
-                session.tempSet.add(holder);
+            	if((holder.isolationLevel == SessionInterface.TX_SERIALIZABLE) 
+            			|| (session.isolationLevel == SessionInterface.TX_SERIALIZABLE)){
+            		session.tempSet.add(holder);
+            	}
             }
         }
 
@@ -645,8 +654,9 @@ class TransactionManagerCommon {
         session.abortTransaction = true;
 
         return false;
+    	
     }
-
+    
     void setWaitingSessionTPL(Session session) {
 
         int count = session.tempSet.size();

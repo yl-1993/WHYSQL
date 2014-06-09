@@ -71,7 +71,8 @@ public interface SessionInterface {
     int TX_READ_UNCOMMITTED = 1;
     int TX_READ_COMMITTED   = 2;
     int TX_REPEATABLE_READ  = 4;
-    int TX_SERIALIZABLE     = 8;
+    int TX_SERIALIZABLE     = 8; 
+    int TX_SNAPSHOT         = 16;     /*some code changed here*/
 
     //
     int lobStreamBlockSize = 512 * 1024;

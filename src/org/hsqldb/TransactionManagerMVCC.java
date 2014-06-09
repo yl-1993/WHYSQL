@@ -96,7 +96,9 @@ implements TransactionManager {
         super.setTransactionControl(session, mode);
     }
 
-    public void completeActions(Session session) {}
+    public void completeActions(Session session) {
+    	endActionTPL(session);
+    }
 
     public boolean prepareCommitActions(Session session) {
 
@@ -183,7 +185,7 @@ implements TransactionManager {
                 current.abortTransaction = true;
             }
 
-            adjustLobUsage(session);
+            //adjustLobUsage(session);
             persistCommit(session);
 
             int newLimit = session.rowActionList.size();
@@ -206,11 +208,20 @@ implements TransactionManager {
                 mergeTransaction(list, 0, limit, session.actionTimestamp);
                 finaliseRows(session, list, 0, limit);
             } else {
-                if (session.rowActionList.size() > 0) {
-                    Object[] list = session.rowActionList.toArray();
-
-                    addToCommittedQueue(session, list);
-                }
+            	if(session.isolationLevel == SessionInterface.TX_SERIALIZABLE)
+            	{
+            		Object[] list = session.rowActionList.getArray();
+            		mergeTransaction(list, 0, limit,session.actionTimestamp);
+            		finaliseRows(session, list, 0, limit);
+            	}
+            	else
+            	{
+	                if (session.rowActionList.size() > 0) {
+	                    Object[] list = session.rowActionList.toArray();
+	
+	                    addToCommittedQueue(session, list);
+	                }
+            	}
             }
 
             endTransactionTPL(session);
@@ -431,13 +442,17 @@ implements TransactionManager {
 
             switch (session.isolationLevel) {
 
-                case SessionInterface.TX_REPEATABLE_READ :
+                /*case SessionInterface.TX_REPEATABLE_READ :
                 case SessionInterface.TX_SERIALIZABLE :
                     redoAction = false;
                     break;
 
                 default :
-                    redoAction = checkDeadlock(session, actionSession);
+                    redoAction = checkDeadlock(session, actionSession);*/
+	            case SessionInterface.TX_REPEATABLE_READ :
+	            case SessionInterface.TX_SERIALIZABLE :
+	            default :
+	                redoAction = checkDeadlock(session, actionSession);
             }
 
             if (redoAction) {
@@ -465,14 +480,14 @@ implements TransactionManager {
     public boolean canRead(Session session, PersistentStore store, Row row,
                            int mode, int[] colMap) {
 
-        RowAction action = row.rowAction;
+         RowAction action = row.rowAction;
 
         if (action == null) {
             return true;
         } else if (action.table.tableType == TableBase.TEMP_TABLE) {
             return true;
         }
-
+        
         if (mode == TransactionManager.ACTION_READ) {
             return action.canRead(session, TransactionManager.ACTION_READ);
         }
@@ -711,10 +726,10 @@ implements TransactionManager {
      */
     public void beginAction(Session session, Statement cs) {
 
-        if (session.isTransaction) {
+        if (session.hasLocks(cs)) {
             return;
         }
-
+        
         if (cs == null) {
             return;
         }
@@ -732,13 +747,34 @@ implements TransactionManager {
                 }
             }
 
-            session.isPreTransaction = true;
+            /*session.isPreTransaction = true;
 
             if (!isLockedMode && !cs.isCatalogLock()) {
                 return;
             }
 
-            beginActionTPL(session, cs);
+            beginActionTPL(session, cs);*/
+            
+            boolean canProceed = setWaitedSessionsTPL(session, cs);
+
+            if (canProceed) {
+                if (session.tempSet.isEmpty()) {
+                    lockTablesTPL(session, cs);
+                } else {
+                    setWaitingSessionTPL(session);
+                }
+                if (session.isTransaction) {
+                    return;
+                }
+               
+                session.isPreTransaction = true;
+            	
+	            if (!isLockedMode && !cs.isCatalogLock()) {
+	                return;
+	            }
+	
+	            beginActionTPL(session, cs);
+            }
         } finally {
             writeLock.unlock();
         }
@@ -774,7 +810,7 @@ implements TransactionManager {
     RowAction addDeleteActionToRow(Session session, Table table,
                                    PersistentStore store, Row row,
                                    int[] colMap) {
-
+    	
         RowAction action = null;
 
         synchronized (row) {
@@ -875,7 +911,7 @@ implements TransactionManager {
     }
 
     void endTransactionTPL(Session session) {
-
+        
         if (catalogWriteSession != session) {
             return;
         }

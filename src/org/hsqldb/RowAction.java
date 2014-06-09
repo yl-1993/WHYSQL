@@ -816,7 +816,23 @@ public class RowAction extends RowActionBase {
                     throw Error.runtimeError(ErrorCode.U_S0500, "RowAction");
                 } else if (action.type == ACTION_INSERT) {
                     if (mode == TransactionManager.ACTION_READ) {
-                        actionType = action.ACTION_DELETE;
+                        //actionType = ACTION_DELETE;
+                    	/*some code changed here*/
+                        switch (session.isolationLevel) {
+
+                        case SessionInterface.TX_READ_UNCOMMITTED :
+                        	actionType = ACTION_INSERT;
+                            break;
+
+                        case SessionInterface.TX_READ_COMMITTED :
+                        case SessionInterface.TX_REPEATABLE_READ :
+                        case SessionInterface.TX_SERIALIZABLE :
+                        case SessionInterface.TX_SNAPSHOT:
+                        default :
+                        	actionType = ACTION_DELETE;
+                            break;
+                    	}
+                        /*some code changed here*/
                     } else if (mode == TransactionManager.ACTION_DUP) {
                         actionType = ACTION_INSERT;
 
@@ -828,7 +844,24 @@ public class RowAction extends RowActionBase {
 
                     break;
                 } else if (action.type == ACTION_DELETE) {
-                    if (mode == TransactionManager.ACTION_DUP) {
+                	/*some code changed here*/
+                	if (mode == TransactionManager.ACTION_READ){
+                		switch (session.isolationLevel) {
+                		
+                        case SessionInterface.TX_READ_UNCOMMITTED :
+                        	actionType = ACTION_DELETE;
+                            break;
+
+                        case SessionInterface.TX_READ_COMMITTED :
+                        case SessionInterface.TX_REPEATABLE_READ :
+                        case SessionInterface.TX_SERIALIZABLE :
+                        case SessionInterface.TX_SNAPSHOT:
+                        default :
+                        	actionType = ACTION_INSERT;
+                            break;
+                    	}
+                	}  /*some code changed here*/
+                	else if (mode == TransactionManager.ACTION_DUP) {
 
                         //
                     } else if (mode == TransactionManager.ACTION_REF) {
@@ -848,7 +881,7 @@ public class RowAction extends RowActionBase {
             } else {
                 if (action.type == ACTION_INSERT) {
                     if (mode == TransactionManager.ACTION_READ) {
-                        actionType = action.ACTION_DELETE;
+                        actionType = ACTION_DELETE;
                     } else if (mode == TransactionManager.ACTION_DUP) {
                         actionType = ACTION_INSERT;
 
