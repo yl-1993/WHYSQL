@@ -262,8 +262,8 @@ public class Session implements SessionInterface {
 
         if (!isInMidTransaction()) {
             isolationLevel = isolationLevelDefault;
-            isReadOnlyIsolation = level
-                                  == SessionInterface.TX_READ_UNCOMMITTED;
+            /* isReadOnlyIsolation = level
+                                  == SessionInterface.TX_READ_UNCOMMITTED;*/
         }
     }
 
@@ -276,14 +276,14 @@ public class Session implements SessionInterface {
             throw Error.error(ErrorCode.X_25001);
         }
 
-        if (level == SessionInterface.TX_READ_UNCOMMITTED) {
+        /*if (level == SessionInterface.TX_READ_UNCOMMITTED) {
             level = SessionInterface.TX_READ_COMMITTED;
-        }
+        }*/
 
         if (isolationLevel != level) {
             isolationLevel = level;
-            isReadOnlyIsolation = level
-                                  == SessionInterface.TX_READ_UNCOMMITTED;
+           /* isReadOnlyIsolation = level
+                                  == SessionInterface.TX_READ_UNCOMMITTED;*/
         }
     }
 

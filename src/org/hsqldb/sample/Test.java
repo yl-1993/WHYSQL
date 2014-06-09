@@ -48,17 +48,15 @@ import java.sql.Statement;
  *
  * Author: Karl Meissner karl@meissnersd.com
  */
-public class Testdb {
+class Testdb  {
 
     Connection conn;                                                //our connnection to the db - presist for life of program
 
     // we dont want this garbage collected until we are done
     public Testdb(String db_file_name_prefix) throws Exception {    // note more general exception
-
         // Load the HSQL Database Engine JDBC driver
         // hsqldb.jar should be in the class path or made part of the current jar
         Class.forName("org.hsqldb.jdbc.JDBCDriver");
-
         // connect to the database.   This will load the db files and start the
         // database if it is not alread running.
         // db_file_name_prefix is used to open or create files that hold the state
@@ -146,58 +144,56 @@ public class Testdb {
             System.out.println(" ");
         }
     }                                       //void dump( ResultSet rs )
-
-    public static void main(String[] args) {
-
-        Testdb db = null;
-
-        try {
-            db = new Testdb("db_file");
-        } catch (Exception ex1) {
-            ex1.printStackTrace();    // could not start db
-
-            return;                   // bye bye
-        }
-
-        try {
-
-            //make an empty table
-            //
-            // by declaring the id column IDENTITY, the db will automatically
-            // generate unique values for new rows- useful for row keys
-            db.update(
-                "CREATE TABLE sample_table ( id INTEGER IDENTITY, str_col VARCHAR(256), num_col INTEGER)");
-        } catch (SQLException ex2) {
-
-            //ignore
-            //ex2.printStackTrace();  // second time we run program
-            //  should throw execption since table
-            // already there
-            //
-            // this will have no effect on the db
-        }
-
-        try {
-
-            // add some rows - will create duplicates if run more then once
-            // the id column is automatically generated
-            db.update(
-                "INSERT INTO sample_table(str_col,num_col) VALUES('Ford', 100)");
-            db.update(
-                "INSERT INTO sample_table(str_col,num_col) VALUES('Toyota', 200)");
-            db.update(
-                "INSERT INTO sample_table(str_col,num_col) VALUES('Honda', 300)");
-            db.update(
-                "INSERT INTO sample_table(str_col,num_col) VALUES('GM', 400)");
-
-            // do a query
-            db.query("SELECT * FROM sample_table WHERE num_col < 250");
-
-            // at end of program
-            db.shutdown();
-        } catch (SQLException ex3) {
-            ex3.printStackTrace();
-        }
-    }    // main()
 }    // class Testdb
+
+
+class Test extends Thread {
+	private Testdb db;
+    private String cmd;
+    private int num;
+	public Test(int n) {
+		try {
+	        this.db = new Testdb("hsql://localhost/");
+	        db.update("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE");
+	    } catch (Exception ex1) {
+	        ex1.printStackTrace();    // could not start db
+
+	        return;                   // bye bye
+	    }
+		this.num = n;
+    }
+	
+    public void run() {
+	    try {
+
+	        // add some rows - will create duplicates if run more then once
+	        // the id column is automatically generated
+	    	if(this.num == 1){
+	    		for( int i =0; i<0; i++){
+	    			db.update("UPDATE branch SET branch_city='TJ"+i+"'  WHERE branch_name='tsinghua'");
+	    		}
+	    	}
+	    	else
+	    	{
+	    		// do a query
+	    		//db.query("SELECT * FROM sample_table WHERE num_col < 250");
+	    		for( int i =0; i<100; i++){
+	    			db.update("UPDATE branch SET branch_city='TJ"+i+"'  WHERE branch_name='tsinghua'");
+	    			//db.query("select * from branch WHERE branch_name='tsinghua'");
+	    			System.out.println(i);
+	    		}
+	    	}
+	        
+	    } catch (SQLException ex3) {
+	        ex3.printStackTrace();
+	    }
+    }
+ 
+    public static void main(String[] args) {
+    	Test test1 = new Test(1);
+    	Test test2 = new Test(2);
+    	test1.start();
+    	test2.start();
+    }
+}
 

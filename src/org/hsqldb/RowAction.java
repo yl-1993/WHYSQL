@@ -827,7 +827,14 @@ public class RowAction extends RowActionBase {
                     	// yl: add snapshot, Jun 2014
                     	switch (session.isolationLevel) {
 
-	                        case SessionInterface.TX_SNAPSHOT:
+                        case SessionInterface.TX_READ_UNCOMMITTED :
+                            actionType = ACTION_INSERT;
+                            break;
+
+                        case SessionInterface.TX_READ_COMMITTED :
+                        case SessionInterface.TX_REPEATABLE_READ :
+                        case SessionInterface.TX_SERIALIZABLE :
+                        case SessionInterface.TX_SNAPSHOT:
 	                        default : 
 	                        	//yl: 不让该action读取到现在session中的数据
 	                        	actionType = ACTION_DELETE;
@@ -849,7 +856,24 @@ public class RowAction extends RowActionBase {
 
                     break;
                 } else if (action.type == ACTION_DELETE) {
-                    if (mode == TransactionManager.ACTION_DUP) {
+                	/*some code changed here*/
+                	if (mode == TransactionManager.ACTION_READ){
+                		switch (session.isolationLevel) {
+                		
+                        case SessionInterface.TX_READ_UNCOMMITTED :
+                        	actionType = ACTION_DELETE;
+                            break;
+
+                        case SessionInterface.TX_READ_COMMITTED :
+                        case SessionInterface.TX_REPEATABLE_READ :
+                        case SessionInterface.TX_SERIALIZABLE :
+                        case SessionInterface.TX_SNAPSHOT:
+                        default :
+                        	actionType = ACTION_INSERT;
+                            break;
+                    	}
+                	}  /*some code changed here*/
+                	else if (mode == TransactionManager.ACTION_DUP) {
 
                         //
                     } else if (mode == TransactionManager.ACTION_REF) {
