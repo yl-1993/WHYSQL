@@ -249,10 +249,10 @@ public class Session implements SessionInterface {
     }
 
     public synchronized void setIsolationDefault(int level) {
-
+    	/*
         if (level == SessionInterface.TX_READ_UNCOMMITTED) {
             level = SessionInterface.TX_READ_COMMITTED;
-        }
+        }*/
 
         if (level == isolationLevelDefault) {
             return;
@@ -557,7 +557,8 @@ public class Session implements SessionInterface {
             sessionContext.isReadOnly = isReadOnlyDefault ? Boolean.TRUE
                                                           : Boolean.FALSE;
 
-            setIsolation(isolationLevelDefault);
+            // wqf: Enable the READ UNCOMMITTED level
+            //setIsolation(isolationLevelDefault);
 
             return;
         }

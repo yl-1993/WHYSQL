@@ -835,13 +835,13 @@ public class RowAction extends RowActionBase {
                         case SessionInterface.TX_REPEATABLE_READ :
                         case SessionInterface.TX_SERIALIZABLE :
                         case SessionInterface.TX_SNAPSHOT:
-	                        default : 
-	                        	//yl: 不让该action读取到现在session中的数据
-	                        	actionType = ACTION_DELETE;
-	                            break;
+                        default : 
+                        	//yl: 不让该action读取到现在session中的数据
+                        	actionType = ACTION_DELETE;
+                            break;
                     	}
                     	// default:
-                        actionType = ACTION_DELETE;
+                        //actionType = ACTION_DELETE;
                     } else if (mode == TransactionManager.ACTION_DUP) {
                     	// 插入数据
                         actionType = ACTION_INSERT;
@@ -882,9 +882,17 @@ public class RowAction extends RowActionBase {
                     	// yl: add snapshot, Jun 2014
                     	switch (session.isolationLevel) {
 
+                        case SessionInterface.TX_READ_UNCOMMITTED :
+                        	// yl : 同步操作的数据
+                        	actionType = ACTION_DELETE;
+                            break;
+
+                        case SessionInterface.TX_READ_COMMITTED :
+                        case SessionInterface.TX_REPEATABLE_READ :
+                        case SessionInterface.TX_SERIALIZABLE :
                         case SessionInterface.TX_SNAPSHOT:
                         default :
-                        	//yl: 取反，保证该事务看到的一致
+                        	//yl : 取反，保证不受其他事物干扰
                         	actionType = ACTION_INSERT;
                             break;
                     	}
@@ -929,10 +937,22 @@ public class RowAction extends RowActionBase {
                 else if(action.type == ACTION_DELETE)
                 {
                 	switch (session.isolationLevel) {
-                    	
-                    case SessionInterface.TX_SNAPSHOT :
-                    default :
+                	// 事物提交，非基于时间戳的都成功执行
+                    case SessionInterface.TX_READ_UNCOMMITTED :
+                    	actionType = ACTION_DELETE;
+                        break;
+
+                    case SessionInterface.TX_READ_COMMITTED :
+                    	actionType = ACTION_DELETE;
+                    	break;
+                    case SessionInterface.TX_REPEATABLE_READ :
+                    case SessionInterface.TX_SNAPSHOT:
                     	actionType = ACTION_INSERT;
+                    	break;
+                    	
+                    case SessionInterface.TX_SERIALIZABLE :
+                    default :
+                    	actionType = ACTION_DELETE;
                         break;
                 	}
                 }
